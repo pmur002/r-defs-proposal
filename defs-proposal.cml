@@ -1,0 +1,1158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<html>
+<head>
+  <style type="text/css">
+    @media print {
+      body { }
+      p.img { text-align: center; page-break-inside: avoid }
+      img.CC { display: inline }
+    }
+    @media screen {
+      body { max-width: 800px; margin: auto }
+      p.img { text-align: center }
+      img.CC { display: inline }
+    }
+    p.date {
+      font-size: smaller;
+      margin: 0;
+    }
+    p.versionHistory {
+      color: gray
+    }
+    p.versionHistory a {
+      color: gray
+    }
+    p.ref {
+      text-indent: -2em;
+      padding-left: 2em;
+    }
+    p.fig {
+      text-align: left;
+    }
+    p.fig img, img.plot {
+      box-shadow: 10px 10px 20px;
+      margin-top: 10px;
+      margin-bottom: 20px;      
+    }
+  </style>
+
+</head>
+<body>
+  <h1>Graphical Definitions in R Graphics</h1>
+  <p>
+    <span style="font-style: italic">by Paul Murrell</span>
+    <a href="http://orcid.org"><img alt="" src="https://www.stat.auckland.ac.nz/~paul/ORCID/ORCiD.png" style="width: 16px; height: 16px; vertical-align: middle" /></a> <span style="font-family: mono; font-size: small"><a href="http://orcid.org/0000-0002-3224-8858">http://orcid.org/0000-0002-3224-8858</a></span>
+  </p>
+  <p class="date">
+    Version 1:  original publication
+  </p>
+
+  <rcode id="init" echo="FALSE" message="FALSE" results="hide">
+opts_chunk$set(comment=" ", tidy=FALSE, dpi=96)
+options(width=100)
+## For wonky desktop set up
+options(bitmapType="cairo")
+  </rcode>
+  <rcode echo="FALSE" message="FALSE">
+    library(grid)
+  </rcode>
+
+  <hr/>
+  <p>
+    <a rel="license"
+    href="http://creativecommons.org/licenses/by/4.0/"><img class="CC"
+    alt="Creative Commons License" style="border-width:0"
+    src="https://i.creativecommons.org/l/by/4.0/88x31.png"/></a><br/><span
+    xmlns:dct="http://purl.org/dc/terms/"
+    property="dct:title">This document</span>
+    by <span xmlns:cc="http://creativecommons.org/ns#"
+    property="cc:attributionName">Paul
+    Murrell</span> is licensed under a <a rel="license"
+    href="http://creativecommons.org/licenses/by/4.0/">Creative
+    Commons Attribution 4.0 International License</a>.
+  </p>
+  <hr/>
+  <p>
+    This document describes a plan to expand the R graphics engine
+    to support graphical definitions:  graphical features like gradients,
+    patterns, masks, and clipping paths.  
+  </p>
+  <p>
+    The code changes are being 
+    tracked in a 
+    subversion branch called <code>R-defs</code>.
+  </p>
+  <p>
+    This is a living document that will evolve as the code is developed.
+  </p>
+  <p>
+    The <a href="#features"/> Section outlines the features that I
+    would like to target and the
+    <a href="#demos"/> Section provides a glimpse of how some
+    new features are currently implemented at the user
+    level (in the <code>R-defs</code> branch).
+  </p>
+  <p>
+    The <a href="#internals"/> Section has more on the internal design and
+    internal code changes
+    that have been made.  
+  </p>
+  <p>
+    The <a href="#issues"/> Section contains some of the major design
+    issues that I have identified so far and 
+    the <a href="#discussion"/> Section contains some questions and
+    (some) answers that I have already thought a bit about,
+    including the changes that would be imposed
+    on graphics device maintainers.
+  </p>
+  <p>
+    I would especially welcome feedback on the following questions:
+  </p>
+  <ul>
+    <li>
+      R core:  some of the new "graphics engine" C code, e.g., 
+      <code>patterns.c</code> has been put in 
+      <code>src/main</code> rather than <code>src/library/grDevices/src</code>
+      so that it is easy for external graphics devices to access it.
+      Is there a better way? 
+    </li>
+  </ul>
+  <ul>
+    <li>
+      RStudio:  will the RStudioGD device be able to support any of this stuff?
+    </li>
+  </ul>
+
+  <toc/>
+
+  <h2><a name="intro">Introduction</a></h2>
+
+  <p>
+    The R graphics engine only supports a limited set of graphical 
+    features:  basic shapes like lines, rectangles, and circles;
+    paths (including shapes with holes);
+    text; raster images; and rectangular clipping regions.
+    These features are sufficient to produce a wide range of statistical plots,
+    but there are many things that R graphics cannot do.
+  </p>
+  <p>
+    For example, the image below contains a set of filled contours within
+    a map of New Zealand.  The natural way to achieve this result would
+    be to draw the filled contours and apply a clipping path to the
+    filled contours based on
+    the boundary of New Zealand.  That is 
+    not something that can
+    be achieved in R graphics (because R graphics only supports
+    rectangular clipping regions).<a href="#clippingpathworkaround"/>
+  </p>
+  <p>
+    <img src="gore-nzoverlaypath.png" alt="contour lines clipped to a map"/>
+  </p>
+  <p>
+    The plan is to add new graphical
+    features to the R graphics engine, such as clipping paths,
+    in order to expand the range of graphical images that can be produced
+    with R.
+  </p>
+
+  <h2><a name="issues">Issues</a></h2>
+  <p>
+    There are a number of issues that need to be resolved 
+    when adding a new graphics feature to the R graphics engine.
+  </p>
+  <dl>
+    <dt>
+      Device-independence:
+    </dt>
+    <dd>
+      <p>
+        Can we generate the same output on all R graphics devices?  
+      </p>
+      <p>
+        This
+        horse has already bolted.  
+        The output on different R graphics devices has never been identical
+        and there are already graphics features
+        that are not supported on all R graphics devices (e.g.,
+        translucent colours are not supported on the PostScript device).
+        The plan is to double-down on this approach and just allow
+        graphics devices to opt out of any or all of the new features.
+      </p>
+      <p>
+        This is partly because not all devices will be capable
+        of supporting the new features and partly because it makes it
+        easy to roll out the new features;  graphics devices can 
+        initially opt out of all new features and add support as
+        and when they are able.
+      </p>
+    </dd>
+    <dt>
+      <code>SEXP</code>s in graphics devices:
+    </dt>
+    <dd>
+      <p>
+        Can we avoid sending R's <code>SEXP</code> structures to
+        graphics devices ?
+      </p>
+      <p>
+        In the early days, there was an effort to avoid using R's internal
+        C structures within graphics devices (so that they only had to
+        include R's graphics-related header files and they did not have to
+        worry about complications like R's memory management).
+      </p>
+      <p>
+        This horse has also bolted.  From R 2.13.2 (at least), when the
+        <code>cap</code> graphics device procedure was added (to allow
+        raster "screen shots" of current device state), devices have
+        been able to at least return R structures.
+      </p>
+      <p>
+        The plan is again to double-down.  Some of the new features
+        will require sending relatively complex information to the graphics
+        device (e.g., gradient information and
+        pattern information), so rather than
+        define complex new C structures, it makes sense to make use
+        of R's existing flexible structures.  
+      </p>
+      <p>
+        One problem is that an SEXP in C is basically an opaque pointer.
+        How does the device know about changes to the SEXP structure?
+        The proposal is to 
+        write a C API for interacting with the SEXP structures
+        and encourage
+        devices to use  that.  An example has been developed for
+        gradient fills (see the 
+        <a href="#demos"/> Section).
+      </p>
+    </dd>
+    <dt>
+      The feature set:
+    </dt>
+    <dd>
+      <p>
+        How to decide which graphics features to support?
+      </p>
+      <p>
+        This is almost the inverse of the device-independence problem.
+        Do we shoot for the union of all features supported by all 
+        possible graphics devices ? Or do we target the feature set
+        of one particular device or format (e.g., SVG) ?
+      </p>
+      <p>
+        The plan is to take ideas from everywhere.
+        There are features that will only be supported by some
+        formats (e.g., SVG has filters, but Cairo has only very
+        limited filter support, whereas Cairo has mesh patterns,
+        but SVG does not).
+        There are also subtleties between formats, like the 
+        'gradientUnits' in SVG that are not
+        supported in Cairo, but we can hopefully make an interface
+        for these (at least in 'grid') even if the graphics engine 
+        only goes as far as Cairo support.
+      </p>
+      <p>
+        The PDF feature set is probably the most sophisticated (?).
+        For example, most graphics formats have linear and radial gradients,
+        Cairo graphics has "mesh patterns" that SVG does not,
+        but PDF has seven types of "shaders"
+        (type 2=Linear gradients, 3=Radial gradients, 
+         4&amp;5=Gouraud-shaded triangle meshes,
+         6=Coons patch meshes, and 7=Tensor-product patch meshes)
+         including Function-based shaders (type 1) that define the
+         colour of every point in the image using a mathematical function.
+         Gradient meshes have been proposed for SVG, but it 
+         <a href="http://libregraphicsworld.org/blog/entry/gradient-meshes-and-hatching-to-be-removed-from-svg-2-0">does
+         not look like they will make it into SVG 2.0</a>.
+      </p>
+    </dd>
+    <dt>
+      'grid' versus 'graphics'
+    </dt>
+    <dd>
+      <p>
+        Will the new features be implemented for 'graphics' or 'grid'
+        or both ?
+      </p>
+      <p>
+        The new features will be implemented within the graphics engine.
+        This means that, in theory, interfaces can be made for both
+        'graphics' and 'grid'.
+      </p>
+      <p>
+        The plan is to focus, initially at least, on 'grid'.
+        This is because 
+        'grid' allows more flexible and interesting definitions,
+        for example, the use of units in locating gradient stops.
+        'grid' also allows for things like adding features
+        by post-editing because we are able to address graphical
+        objects by name.
+      </p>
+      <p>
+        It is also possible in the meantime 
+        to apply the new features to 'graphics'
+        output via <code>gridGraphics::grid.echo</code>
+        and functions like <code>grid::grid.edit</code>.
+      </p>
+    </dd>
+    <dt>
+      Graphics devices
+    </dt>
+    <dd>
+      <p>
+        Which graphics devices should implement which features ?
+      </p>
+      <p>
+        Obviously, only some features can be added to some graphics devices
+        because of limitations in graphics formats and/or graphics 
+        libraries.  This issue relates more to <em>when</em> support
+        gets added to different graphics devices.  The problem is that
+        implementing all possible features on all possible devices
+        is a big job (made more difficult by the development environment
+        on some platforms, like Windows).
+      </p>
+      <p>
+        The proposal is to be feature-greedy and just
+        focus initially on the Cairo graphics devices.
+        This gives a reasonable coverage (raster on Linux at least, PDF, 
+        and SVG) from a single set of code changes.
+        The idea would be to introduce as many features as possible,
+        on the Cairo devices, for 4.0.0 and then fill in the gaps.
+        Once the Cairo changes are implemented, they will hopefully 
+        provide a template so that others 
+        could contribute with patches 
+        for other devices.
+      </p>
+      <p>
+        A danger is that only implementing for Cairo may "bias" the
+        graphics engine implementation towards that device and cause
+        problems for implementations on other graphics devices.
+        Perhaps implementing for two devices (e.g., also the PDF device)
+        rather than one
+        would be more prudent.
+      </p>
+      <p>
+        Another issue is that the default, "graphapp", Windows
+        device is NOT going to be able to support these features
+        very easily (if at all).  GraphApp does not support any
+        of these features (?) (even in the 
+        <a href="http://enchantia.com/graphapp/doc/manual/">latest version</a>
+        and not even the underlying Windows GDI supports gradient fills
+        (though it looks like clipping paths are possible).
+        OTOH, implementing features on the Cairo device makes them
+        available on all platforms (?).
+        I am unsure about whether the RStudio plot pane (RStudioGD) will
+        be able to support these features (across platforms).
+      </p>
+      <p>
+        Third-party graphics devices can of course update as much as they
+        want when they want, though they will have to immediately
+        provide some minimal stubs for the changes to the graphics
+        device API (<code>GraphicsDevice.h</code>).
+      </p>
+    </dd>
+  </dl>
+
+  <h2><a name="features">Features</a></h2>
+  <p>
+    This section briefly describes
+    the set of graphical features that are currently
+    being considered.
+  </p>
+  
+  <dl>
+    <dt>
+      Gradients
+    </dt>
+    <dd>
+      <p>
+        This includes linear gradients and radial gradients.
+        Gradients can be applied to both fills and strokes
+        (at least on some devices).
+      </p>
+      <p>
+        Gradient meshes are also supported on several devices
+        (Cairo and PDF).
+      </p>
+    </dd>
+    <dt>
+      Patterns
+    </dt>
+    <dd>
+      <p>
+        Pattern fills are similar to gradient fills in that they
+        define a "paint" for filling a region.  The difference is
+        that a pattern fill is based on "tiling" a smaller image.
+      </p>
+      <p>
+        There are other sorts of pattern fills in some formats
+        (e.g., function-based shaders in PDF).
+      </p>
+    </dd>
+    <dt>
+      Clipping paths
+    </dt>
+    <dd>
+      <p>
+        Allow clipping to an arbitrary path rather than just a 
+        rectangle.  This relies on being able to specify a 
+        "path" separate from drawing (stroking or filling) it.
+      </p>
+    </dd>
+    <dt>
+      Masks
+    </dt>
+    <dd>
+      <p>
+        Similar to clipping except that affect translucency of 
+        rendered output (rather than just visible or not).
+        Again, relies on being able to describe paths without
+        drawing them.
+      </p>
+    </dd>
+    <dt>
+      Filters
+    </dt>
+    <dd>
+      <p>
+        These are essentially raster operations, but a format like
+        SVG allows them to be defined as part of a vector image
+        (they are applied as part of the rasterization of the
+        vector image, for example, when drawing to screen).
+      </p>
+      <p>
+        Implementing these in the graphics engine is probably too hard.
+        I don't think any of the standard graphics devices will 
+        support them (including the Cairo svg device).
+      </p>
+      <p>
+        These may have to remain the domain of packages like 
+        'gridSVG' (which provides full access to SVG features)
+        or 'magick' (which allows us to apply raster operations
+        to raster images), possibly in combination with
+        the 'rasterize' package.
+      </p>
+      <p>
+        It looks like Thomas Lin Pedersen has been thinking along similar lines
+        (to the latter) with a
+        <a href="https://github.com/thomasp85/ggfx">'ggfx'</a> package.
+      </p>
+      <!-- Only very limited support in Cairo?  No support in PDF? 
+           (see ../../Examples/Filters) -->
+    </dd>
+  </dl>
+  
+  <h2><a name="demos">Demonstrations</a></h2>
+  <p>
+    A new <a href="https://svn.r-project.org/R/branches/R-defs/"><code>R-defs</code></a> 
+    branch has been created for experimenting.
+    So far, that includes the addition of support for
+    linear and radial gradient fills and clipping paths, 
+    on Cairo graphics devices,
+    with a 'grid' interface.  The following set of examples
+    show how the 'grid' interface has been implemented so far.
+  </p>
+  <p>
+    <strong>NOTE: you should only try these examples on a Cairo device
+    (unless you have a fetish for segfaults).</strong>
+  </p>
+
+  <h3>Gradients</h3>
+  <p>
+    The <code>fill</code> gpar can now be a linear gradient 
+    (as well as a normal R colour).
+  </p>
+  <rcode dev="svg" fig.width="2" fig.height="2">
+library(grid)
+grid.rect(gp=gpar(fill=linearGradient()))
+  </rcode>
+  <p>
+    A linear gradient is defined by a start point (default: bottom-left)
+    and an end point (default: top-right) and a series of "stops".
+    Each stop is defined by a position on the line from start point to
+    end point, plus a colour.  If the first stop is not at the start 
+    point, or the last stop is not at the end point, we can specify
+    how the gradient "extends" beyond the first and last stops.
+  </p>
+  <p>
+    The following code creates a linear gradient that starts one inch
+    off the bottom of the image, proceeds vertically to the top of the image,
+    and transitions from red to yellow then back to red.
+  </p>
+  <!-- produce PNG for this one because SVG does NOT have 
+       spreadMethod="none" (so Cairo SVG just uses "pad") -->
+  <rcode dev="png" fig.width="2" fig.height="2" dpi="96">
+grid.rect(gp=gpar(fill=linearGradient(c("red", "yellow", "red"),
+                                      c(0, .5, 1),
+                                      x1=.5, y1=unit(1, "in"), 
+                                      x2=.5, y2=1,
+                                      extend="none")))
+  </rcode>
+  <p>
+    When the gradient fill is specified on a grob, 
+    the start and end points are relative to the grob bounding box.
+    The following code fills a rectangle in the central quarter of the
+    image with the default linear gradient;  the gradient
+    starts at the bottom-left of the rectangle and ends at the top-right
+    of the rectangle.
+  </p>
+  <rcode dev="svg" fig.width="2" fig.height="2">
+grid.rect(width=.5, height=.5,
+          gp=gpar(fill=linearGradient()))
+  </rcode>
+  <p>
+    A gradient fill can also be specified on a viewport, in which case
+    the gradient is relative to the viewport and all subsequent
+    drawing makes use of that gradient (unless a new explicit fill is
+    specified).
+  </p>
+  <p>
+    In the code below, we push a viewport that fills the whole image 
+    and specify the default linear gradient fill, so the gradient
+    is relative to the whole image.
+    We then draw a rectangle, with no explicit fill, so it
+    "inherits" the gradient from the viewport.
+  </p>
+  <rcode id="vppattern" dev="svg" fig.width="2" fig.height="2">
+pushViewport(viewport(gp=gpar(fill=linearGradient())))
+grid.rect()
+  </rcode>
+  <p>
+    In the next example, we have the same viewport, but we draw
+    the rectangle only in the central quarter of the image.  This
+    shows that the gradient that the rectangle inherits is relative
+    to the viewport rather than being relative to the rectangle.
+  </p>
+  <rcode dev="svg" fig.width="2" fig.height="2">
+pushViewport(viewport(gp=gpar(fill=linearGradient())))
+grid.rect(width=.5, height=.5)
+  </rcode>
+  <p>
+    The next example shows another variation on inheritance of gpar 
+    settings.  This time a viewport is pushed with the default
+    linear gradient and we draw a rectangle in the left third of the 
+    image that inherits that gradient (relative to the viewport).
+    Then we push another viewport with a green fill and draw a rectangle
+    within that viewport (in the centre of the image) and that rectangle
+    inherits the green fill.  Finally, we pop the second viewport and
+    return to the first viewport and restore its linear gradient
+    so that when we draw
+    a rectangle in the right third of the image it again inherits
+    the linear gradient (relative to the viewport).  
+  </p>
+  <rcode dev="svg" fig.width="2" fig.height="2">
+pushViewport(viewport(gp=gpar(fill=linearGradient())))
+grid.rect(x=.2, width=.2, height=.5)
+pushViewport(viewport(gp=gpar(fill="green")))
+grid.rect(x=.5, width=.2, height=.5)
+popViewport()
+grid.rect(x=.8, width=.2, height=.5)
+  </rcode>
+  <p>
+    The next example also demonstrates inheritance of gpar settings,
+    but this time it is inheritance between viewports.
+    We push a viewport with the default gradient, then push another
+    viewport in the central quarter of the image, then draw a rectangle.
+    The second viewport inherits the gradient from the first viewport and
+    then the rectangle inherits the gradient from the second viewport.
+    The important point is that the gradient is relative to the first
+    viewport, which is where it was defined.
+  </p>
+  <rcode dev="svg" fig.width="2" fig.height="2">
+pushViewport(viewport(gp=gpar(fill=linearGradient())))
+pushViewport(viewport(width=.5, height=.5))
+grid.rect()
+  </rcode>
+  <p>
+    The next example just shows that gradients work with
+    translucent colours.  We draw the text "Reveal" then over the
+    top draw a rect with a gradient fill that transitions from
+    (opaque) white to transparent.
+  </p>
+  <rcode dev="svg" fig.width="2" fig.height="2">
+grid.text("Reveal", gp=gpar(fontface="bold", cex=3))
+grid.rect(gp=gpar(fill=linearGradient(c("white", "transparent"),
+                                      y1=.5, y2=.5)))
+  </rcode>
+  <p>
+    The next example shows that radial gradients work via
+    the same interface.  It is expected that fill patterns would
+    work the same way.
+  </p>
+  <rcode dev="svg" fig.width="2" fig.height="2">
+grid.rect(gp=gpar(fill=radialGradient()))    
+  </rcode>
+  <p>
+    As with linear gradients, we have control over the start and end
+    of the radial gradient, though in the radial case it is a start circle
+    and an end circle.  In the code below, we make a gradient that starts
+    near the top right of the image (with white) and ends with a circle 
+    that fills the image (black).
+  </p>
+  <rcode dev="svg" fig.width="2" fig.height="2">
+grid.rect(gp=gpar(fill=radialGradient(c("white", "black"),
+                                      cx1=.8, cy1=.8)))    
+  </rcode>
+  <p>
+    The next example shows that we can add a gradient to an
+    existing image, in this case a 'ggplot2' plot.
+    Here we edit the background of the plot panel to add
+    a grey-to-white gradient.
+  </p>
+  <rcode dev="svg" fig.width="5" fig.height="5" fig.keep="last">
+library(ggplot2)
+ggplot(mtcars) +
+    geom_point(aes(x=disp, y=mpg)) +
+    theme_bw()
+grid.force()
+grid.edit("panel.background", grep=TRUE,
+          gp=gpar(fill=linearGradient(c("grey", "white"), x1=.5, x2=.5)))
+  </rcode>
+  <p>
+    The next example is similar, but demonstrates that, even with
+    gradients only implemented in 'grid', we can still add gradients
+    to 'graphics' plots if we first convert them using the 
+    'gridGraphics' package.
+  </p>
+  <rcode dev="svg" dev.args="list(bg='transparent')" fig.width="5" fig.height="5" fig.keep="last">
+plot(mpg ~ disp, mtcars, pch=16)
+library(gridGraphics)
+grid.echo()
+g <- grid.grab()
+box <- grid.grep("box", g, grep=TRUE)
+g <- editGrob(g, box$name, 
+              gp=gpar(fill=linearGradient(c("grey", "white"), x1=.5, x2=.5)))
+g <- reorderGrob(g, box$name)
+grid.newpage()
+grid.draw(g)
+  </rcode>
+
+  <h3>Clipping paths</h3>
+  <p>
+    The <code>clip</code> argument for the <code>viewport</code> function
+    can be a 'grid' grob (in addition to the existing 
+    <code>"on"</code>, which only enforces a rectangular clipping region).   
+    The grob defines a path that is used
+    to set the clipping region.
+  </p>
+  <p>
+    A simple example is clipping output (in this case text) to a circle.
+    The text and the circle are both drawn in grey and then the text
+    is drawn black with the circle used as a clipping path.
+  </p>
+  <rcode dev="svg" dev.args="list(bg='transparent')" fig.width="2" fig.height="2">
+grid.text("testing", gp=gpar(cex=3, col="grey"))
+cg <- circleGrob(r=.25, gp=gpar(col="grey"))
+grid.draw(cg)
+pushViewport(viewport(clip=cg))
+grid.text("testing", gp=gpar(cex=3))
+  </rcode>
+  <p>
+    A slightly more dramatic example involves clipping text to several
+    circles at once.  Note that this still only requires a single
+    grob to specify the clipping path.
+  </p>
+  <rcode dev="svg" dev.args="list(bg='transparent')" fig.width="2" fig.height="2">
+grid.text("testing", gp=gpar(cex=3, col="grey"))
+cg <- circleGrob(x=1:3/4, r=.1, gp=gpar(col="grey"))
+grid.draw(cg)
+pushViewport(viewport(clip=cg))
+grid.text("testing", gp=gpar(cex=3))
+  </rcode>
+  <p>
+    The clipping path is relative to the viewport and
+    clipping paths are inherited like the existing <code>clip</code>
+    settings.  
+  </p>
+  <p>
+    In the following code (after drawing everything in grey 
+    without any clipping), we push a viewport with three circles as the
+    clipping path, then we draw the text "test one", which gets clipped
+    to the circles.  Next, we push another viewport in the bottom third
+    of the image, which inherits the clipping path, and we draw the text
+    "test two", which also gets clipped to the circles.  Finally, 
+    we pop those two viewports and push a third viewport in the top
+    third of the image;  now there is no clipping path in effect (because
+    we popped the viewport with a clipping path), so when we
+    draw the text "test three" the text is not clipped at all.
+  </p>
+  <rcode dev="svg" dev.args="list(bg='transparent')" fig.width="2" fig.height="2">
+cg <- circleGrob(y=1:3/4, r=.1, gp=gpar(col="grey"))
+grid.text("test one", gp=gpar(cex=3, col="grey"))
+grid.draw(cg)
+pushViewport(viewport(y=0, height=1/3, just="bottom"))
+grid.text("test two", gp=gpar(cex=3, col="grey"))
+popViewport()
+pushViewport(viewport(clip=cg))
+grid.text("test one", gp=gpar(cex=3))
+pushViewport(viewport(y=0, height=1/3, just="bottom"))
+grid.text("test two", gp=gpar(cex=3))
+popViewport(2)
+pushViewport(viewport(y=1, height=1/3, just="top"))
+grid.text("test three", gp=gpar(cex=3))
+  </rcode>
+
+  <p>
+    Clipping paths can even contain clipping paths, though this can
+    only make the clipping region <em>smaller</em>.
+  </p>
+  <p>
+    In the following code (after drawing everything in grey),
+    we push a viewport with a clipping path that consists of a circle
+    that is itself drawn within a viewport with a clipping path (that consists
+    of three smaller circles).  When we draw the text "testing" it is clipped
+    to the intersection of the single large circle and the three smaller 
+    circles (in effect, the larger circle clipping path
+    has itself been clipped using the 
+    three smaller circles).
+  </p>
+  <rcode dev="svg" dev.args="list(bg='transparent')" fig.width="2" fig.height="2">
+grid.circle(r=.25, gp=gpar(col="grey"))
+cg2 <- circleGrob(x=1:3/4, r=.1, gp=gpar(col="grey"))
+grid.draw(cg2)
+grid.text("testing", gp=gpar(cex=3, col="grey"))
+cg <- circleGrob(r=.25, vp=viewport(clip=cg2))
+pushViewport(viewport(clip=cg))
+grid.text("testing", gp=gpar(cex=3))
+  </rcode>
+
+  <h2><a name="internals">Internal details</a></h2>
+
+  <h3>Gradients</h3>
+  <p>
+    A <code>patternFill</code>
+    property has been added to the <code>R_GE_gcontext</code> 
+    (graphical context)
+    in the graphics engine.
+    This property can be either <code>-1</code> 
+    (indicating no pattern fill) or a non-negative integer, which
+    represents an index into the set of current pattern fills on
+    the graphics device.
+  </p>
+  <p>
+    This property is in addition to the existing <code>fill</code>
+    property.  If <code>patternFill</code> is non-negative
+    then it overrides <code>fill</code>.  This makes it easy
+    for a graphics device to ignore <code>patternFill</code> 
+    if it wants to.
+  </p>
+  <p>
+    A <code>grDevices::linearGradient</code> function has been added.
+    This is not meant to be called
+    directly by users;  it is there for 'graphics' and 'grid' to use.
+    The idea is the 'graphics' and 'grid' have user-level 
+    interfaces to define gradients and those are 
+    converted to graphics engine versions of the gradients
+    for drawing.  There is also a <code>grDevices::radialGradient</code>.
+  </p>
+  <p>
+    A <code>setPattern</code> device function has been added to
+    allow the graphics engine to ask a graphics device to create
+    a pattern.  The function takes a <code>"Pattern"</code> object
+    (either a linear or radial gradient so far) and returns an integer
+    (to be used in the <code>patternFill</code>).
+  </p>
+  <p>
+    (A graphics device can just always return 0 if it generates
+    a new pattern every time <code>setPattern</code> is called ?)
+  </p>
+  <p>
+    There is also a <code>releasePattern</code> device function
+    so that, e.g., 'grid' can release a pattern that is just set on
+    a grob (and release all patterns on new page).  Specify -1
+    to release all patterns.
+  </p>
+  <p>
+    NOTE that the <code>"Pattern"</code> sent to 
+    <code>setPattern</code> is an SEXP,
+    which means it is sort of an opaque pointer in C code,
+    so the graphics engine provides a C API for extracting 
+    information from a <code>"Pattern"</code> object.
+    For example, 
+    <code>R_GE_isPattern</code> can be called to check for a pattern fill,
+    <code>R_GE_patternType</code> can be called to get the pattern type, and
+    <code>R_GE_linearGradientNumStops</code> can be called
+    to get the number of stops from a <code>LinearGradient</code> SEXP.
+  </p>
+  <p>
+    The Cairo graphics device (<code>x11(type="cairo")</code>, 
+    <code>png(type="cairo")</code>, 
+    <code>cairo_pdf()</code>, and <code>svg()</code>) 
+    has implemented <code>setPattern</code> 
+    and <code>releasePattern</code> and maintains an array
+    of patterns.  It observes the new
+    <code>R_GE_gcontext.gradientFill</code> setting
+    and uses the value
+    as an index into its array of patterns.
+  </p>
+  <p>
+    The 'grid' package provides its own <code>linearGradient</code> 
+    function for defining a linear gradient in 'grid'.
+    One notable difference is that the start and end points for
+    the gradient can be defined using 'grid' units.
+    The <code>gpar</code> function now also allows
+    a <code>GridPattern</code> as the value for the 
+    <code>fill</code> property.
+  </p>
+  <p>
+    When gpar settings are enforced during drawing a grob, a
+    pattern fill is resolved to a graphics engine
+    <code>Pattern</code> (for example, the start and end 
+    points for a linear gradient are converted to locations on the graphics
+    device).
+    If the pattern fill is specified on a viewport, the pattern definition
+    is relative to that viewport; if the pattern fill is specified 
+    on a grob, then the pattern definition is
+    relative to the bounding box of the grob.
+  </p>
+  <p>
+    'grid' calls <code>setPattern</code> to "resolve" a pattern
+    and generates a <code>GridResolvedPattern</code>, which contains
+    the integer index from <code>setPattern</code>.  This allows
+    'grid' to reuse the pattern index, e.g., when drawing
+    multiple shapes from a single grob, or when revisiting a 
+    viewport (so that it does not have to ask the graphics device
+    for a new pattern for every shape or for every visit to a viewport).
+  </p>
+  <p>
+    When drawing a grob, 'grid' resolves the pattern relative to the grob,
+    gets the pattern index and uses that for every shape that is drawn
+    from this grob, then releases the pattern.
+  </p>
+  <p>
+    When pushing a viewport, 'grid' resolves 
+    the pattern relative to the viewport
+    and stores the resolved pattern in the pushed viewport, so that
+    revisits to the viewport can reuse the resolved pattern.
+    The resolved pattern is only stored in the pushed viewport so
+    that replays of the grid display list (e.g., <code>grid.edit</code>)
+    or the graphics engine display list (e.g., device resize or 
+    device copy) will always resolve the pattern again.
+  </p>
+  <p>
+    When starting a new page, 'grid' releases all patterns.
+  </p>
+
+  <h3>Clipping paths</h3>
+  <p>
+    A <code>setClipPath</code> device function has been added to allow
+    the graphics engine (or graphics systems) to ask a device to 
+    define a clipping path.  The function takes a <code>path</code>
+    and a <code>ref</code> and should return a reference to
+    the clipping path on the device.  All three values are SEXPs,
+    but all the device needs to know about the <code>path</code> is that
+    it is an R function (with no arguments) that the device should
+    call to create the clipping path.  More on how that works in a second.
+    All the graphics engine (or graphics systems) need to know about the
+    reference to a clipping path is ... nothing.  These references are
+    generated by the device, passed back to the graphics engine, then
+    sent in again to the device.  The graphics engine (or graphics
+    systems) only store the references and pass them back to the device;
+    the references only have
+    meaning within the graphics device.
+  </p>
+  <p>
+    There is also a <code>releaseClipPath</code> device function,
+    which takes a reference to a clipping path so that the graphics engine
+    (or graphics systems) can indicate to the device that a clipping path
+    is no longer required.
+  </p>
+  <p>
+    When a 'grid' viewport is created with a grob as the <code>clip</code>
+    argument, a <code>"GridClipPath"</code> object is created, which
+    is a function that draws the grob.  When a 'grid' viewport is pushed,
+    the clipping path is "resolved" by calling <code>setClipPath</code>
+    on the graphics device
+    (via R and C interface functions in the 'grDevices' package).
+  </p>
+  <p>
+    The Cairo device maintains an array of clipping paths.
+    When a new clipping path is requested (with a call to 
+    <code>setClipPath</code>) the device starts a new path
+    and enters an "append mode"
+    before it runs the R function
+    that defines the clipping path.  Cairo device functions that perform
+    drawing (e.g., <code>Cairo_Rect</code>) only <em>append</em> shapes to
+    the current path when the device is in "append mode" (when not in
+    append mode, these device functions start a new path, add the shape
+    to the path, set
+    parameters like colour, then stroke and/or fill the path).
+    After the R function has run, the path is closed and the clipping
+    region is set from the path.
+    The path is also saved in the array of clipping paths and 
+    an integer index to array is returned as the reference.
+  </p>
+  <p>
+    The 'grid' package stores the clipping path reference that is returned,
+    along with the original <code>"GridClipPath"</code>, creating a 
+    <code>"GridResolvedClipPath"</code>.  This enhanced clipping path
+    object is stored in the pushed viewport so that, when a viewport
+    is revisited, 'grid' can send the reference to the clipping path
+    as well as the clipping path itself in the call to <code>setClipPath</code>,
+    which allows the graphics device to reuse cached clipping paths
+    (if it is set up that way).
+  </p>
+  <p>
+    The Cairo device checks whether the <code>ref</code> argument
+    to <code>setClipPath</code> is non-NULL, in which case it looks
+    up the relevant clipping path in its array of clipping paths
+    and reuses that, rather than generating a new clipping path.
+  </p>
+  <p>
+    To allow for clipping paths within clipping paths, 
+    the Cairo device "stacks" clipping paths (and clipping path
+    references) if it gets a call to <code>setClipPath</code>
+    within "append mode".  In this case, the reference returned
+    is a vector of integer indexes into the array of clipping paths.
+    (The 'grid' package does not need to know anything about this detail
+    because all it does is store and send the reference value that 
+    <code>setClipPath</code> returns.)
+  </p>
+  <p>
+    'grid' releases all clipping paths on a <code>grid.newpage</code>.
+  </p>
+
+  <h2><a name="discussion">Discussion</a></h2>
+  <p>
+    The argument to augment the R graphics engine with new 
+    graphics features is a simple one:  R cannot do some things now,
+    so we should make it so it can.  But how important is it
+    to allow R to produce more sophisticated graphical output ?
+  </p>
+  <p>
+    One motivation for these changes is to allow people to 
+    produce more of their figures and diagrams via code.
+    One workflow that people employ is to generate a plot using R
+    and then use Adobe Illustrator to "touch up" the plot.
+    This sort of workflow is not automatable, or reproducible, 
+    or shareable, etc.  If we can help people to do everything 
+    via code and remove manual steps from workflows, that is a big win.
+  </p>
+  <p>
+    A simple example of the usefulness of clipping paths is the
+    ability to clip to (rectangular) rotated viewports (!).
+  </p>
+  <p>
+    From my own perspective, having better support for 
+    sophisticated graphical features in R would allow me to
+    expand on work already done on importing graphics from
+    other systems into R ('grImport', 'grImport2', 'metapost', 
+    'dvir', 'displayEngine').  Without these features, it is not
+    possible to represent images from other systems properly 
+    in R.
+  </p>
+  <p>
+    Anecdotally, I believe that others would like to have the
+    ability to make use of additional graphics features too.
+    As one piece of hard evidence, this work is being partially funded by 
+    a donation from R Studio to the University of Auckland Foundation.
+  </p>
+
+  <h3>External graphics devices</h3>
+  <p>
+    How much work needs to be done to upgrade a graphics device for
+    these changes ?
+  </p>
+  <p>
+    A device must implement <code>dev->setPattern</code>, but it can just
+    return -1 if unsupported.  
+    (We could provide graphics engine function to use for unimplemented.)
+    (We could provide graphics engine constant instead of -1.)
+    A device can also just create a new pattern every time.
+    If it returns a meaningful pattern index, it must do something sensible
+    with that index when provided via <code>R_GE_gcontent.patternFill</code>.
+  </p>
+  <p>
+    A device 
+    must implement <code>dev->releasePattern</code>, but it can just do nothing.
+  </p>
+  <p>
+    There is new <code>R_GE_gcontent.patternFill</code>, but a device
+    can just ignore it 
+    (because <code>R_GE_gcontext.fill</code> is always set; it will just
+    be "transparent" when a pattern fill has been specified).
+  </p>
+  <p>
+    A device 
+    must implement <code>dev->setClipPath</code>, but can just return 
+    <code>NULL</code>.
+    There are three levels of support:  none, in which case the device
+    ignores the clipping path request (and returns NULL);  non-caching,
+    where the device sets clipping paths, but returns NULL, so it will
+    always generate a new clipping path on every request;  caching,
+    where the device sets clipping paths, caches clipping paths,
+    and returns a reference to the cache, and the reference only has
+    to make sense to the device.
+  </p>
+  <p>
+    A device 
+    must implement <code>dev->releaseClipPath</code>, but can just do nothing.
+  </p>
+  <p>
+    The plan is to implement at least one caching device (Cairo,
+    plus maybe PDF), a non-caching device (always generates new definition
+    on every use), and a non-implementing device (does not support 
+    features).  These then provide templates for external device
+    maintainers.
+  </p>
+
+  <h3>Efficiency</h3>
+  <p>
+    In an unusual move (for me), I have not completely ignored
+    efficiency concerns.
+  </p>
+  <p>
+    Definitions are resolved every time a graphics system calls 
+    the graphics engine because the graphics engine is a "flat"
+    coordinate system whereas the graphics systems 
+    (particularly 'grid' units) are dynamic
+    and depend on the current drawing context.
+  </p>
+  <p>
+    This may present some challenges for implementing graphical
+    definitions efficiently.
+    However, the worst case scenario is something like filling
+    thousands of data symbols with the same gradient fill.
+  </p>
+  <p>
+    Another issue is revisiting viewports (up/down).  This could
+    also generate a lot of redundant recalculations (or very large
+    file sizes).  Though not
+    at the same scale as the thousands-of-shapes problem, it could
+    be more common (?).  This also can happen during calculation
+    of things like "grobWidth" units.
+  </p>
+  <p>
+    The inefficiency could bite both in terms of speed and,
+    for file-based devices, memory.
+  </p>
+  <p>
+    In both cases, allowing the graphics device to cache its 
+    definitions should be beneficial.
+  </p>
+  <p>
+    The plan is to actually do some measurements to demonstrate that
+    there is a problem and that caching is helpful (or not).
+  </p>
+
+  <h3>Issues</h3>
+  <!--
+  <p>
+    I have put "patterns.c" in src/main so that the X11 module (and
+    external devices) can see the C API for gradient objects.
+    This COULD go in grDevices/src/, but that would require an awful
+    "stub" like there is src/main/colors.c for grDevices/src/colors.c (?)
+  </p>
+  -->
+  <p>
+    What to do about pattern fill on multiple shapes from single
+    grob: 
+    <code>grid.rect(width=1:2/3, gp=gpar(gradientFill=linearGradient()))</code>
+    Currently just resolving pattern based on bounding box
+    of all shapes.
+  </p>
+  <p>
+    The current implementation of pattern fills in 'grid' "nicely" 
+    incorporates them into the gpar(fill=) interface.
+    This may have implications for packages that build on 'grid'
+    if they try to manipulate 'grid' gpars in any way, other than
+    just setting them (e.g., 'gridSVG' converts gpar values to
+    SVG display attributes).
+  </p>
+  <p>
+    These changes introduce some "modal" behaviour (like 
+    whether the device is "appending" or "drawing");  how to
+    make sure we elegantly unwind when an error occurs (e.g.,
+    when hit an error while playing/recording a clipping path) ?
+  </p>
+  <p>
+    What will the impact be on saved/restored plots ?
+    (the graphics engine display list and snapshots thereof)
+    I have some test cases working within-session.
+    It would certainly be a bad idea to save from R 4 and replay
+    in R 3 (though the reverse should be ok?).
+  </p>
+
+  <h3>'gridSVG'</h3>
+  <p>
+    Reasons for keeping 'gridSVG':  still the only way to 
+    support some stuff (e.g., Cairo does not support filters);
+    still the only way to retain structure and labelling when export.
+  </p>
+  <p>
+    The impact on 'gridSVG' may be interesting.  There may be differences
+    between the way that features are implemented in 'grid' vs 'gridSVG'.
+    For example, gradient fills might be added to <code>gpar</code>
+    in 'grid', rather than creating a separate class of grob (as in 'gridSVG').
+    This means that 'gridSVG' may need updating to work with 
+    new 'grid' gradients. (Yes!)
+  </p>
+  <p>
+    'grImport2' is another interesting case - it may still end up with 
+    <code>ext=gridSVG</code> as well as being able to draw directly
+    to normal R graphics devices.
+  </p>
+
+  <h3>Fonts</h3>
+  <p>
+    Proper font support is another issue entirely.
+    Currently addressed by packages like 'showtext' and 'extrafont'.
+    Maybe a future project.
+  </p>
+
+  <h3>Extensions</h3>
+  <p>
+    It would be nice if the graphics device API allowed for
+    people to write R code that talked directly to the 
+    graphics device without having to be controlled by (and
+    filtered through) the
+    graphics engine. This would allow, for example, people
+    to access features on graphics devices that are still
+    not supported by the graphics engine 
+    (sort of like what 'showtext' sneakily does now to hijack
+    text rendering; 'tikzDevice'
+    also does something like this for creating "tags" in tikZ
+    output ?).  This would be a little like
+    DVI specials (?)
+    TODO: look at what 'showtext' and 'tikzDevice' need to do
+    and how they currently work around the graphics engine.
+  </p>
+  <p>
+    Probably also best as a separate, future project.
+  </p>
+
+  <h2>Footnotes</h2>
+  <div>
+    <p class="footnote">
+      <a name="clippingpathworkaround"/>
+      It is actually possible to get this particular result currently in
+      R graphics.  We can generate a path consisting of the border of
+      the entire image with the border of New Zealand inside it (i.e., a
+      rectangular path with a hole the shape of New Zealand) and fill
+      that with opaque white.  However, that sort of workaround is more
+      awkward and often runs into difficulties, for example, if we want
+      to add other output to the image, but not obscure it with the
+      opaque white fill.  In general, we can generate may different
+      graphical results just with the existing R graphics features, but
+      we may have to work very hard to get what we want.  It could be
+      said that all this proposal is aiming for is greater convenience,
+      but in some cases it is MUCH greater convenience.
+    </p>
+  </div>
+
+  <hr/>
+  <p>
+    <a rel="license"
+    href="http://creativecommons.org/licenses/by/4.0/"><img class="CC"
+    alt="Creative Commons License" style="border-width:0"
+    src="https://i.creativecommons.org/l/by/4.0/88x31.png"/></a><br/><span
+    xmlns:dct="http://purl.org/dc/terms/"
+    property="dct:title">This document</span>
+    by <span xmlns:cc="http://creativecommons.org/ns#"
+    property="cc:attributionName">Paul
+    Murrell</span> is licensed under a <a rel="license"
+    href="http://creativecommons.org/licenses/by/4.0/">Creative
+    Commons Attribution 4.0 International License</a>.
+  </p>
+
+</body>
+</html>
