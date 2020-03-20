@@ -1,5 +1,5 @@
 
-TARFILE = ../defs-proposal-deposit-$(shell date +'%Y-%m-%d').tar.gz
+TARFILE = ../r-defs-proposal-deposit-$(shell date +'%Y-%m-%d').tar.gz
 # For building on my office desktop
 Rscript = ~/R/r-devel-definitions/BUILD/bin/Rscript
 # Rscript = Rscript
@@ -20,14 +20,13 @@ Rscript = ~/R/r-devel-definitions/BUILD/bin/Rscript
 	$(Rscript) knit.R $*.Rhtml
 
 docker:
-	cp ../../grImport2_0.2-0.tar.gz .
-	sudo docker build -t pmur002/defs-proposal .
-	sudo docker run -v $(shell pwd):/home/work/ -w /home/work --rm pmur002/defs-proposal make defs-proposal.html
+	sudo docker build -t pmur002/r-defs-proposal .
+	sudo docker run -v $(shell pwd):/home/work/ -w /home/work --rm pmur002/r-defs-proposal make r-defs-proposal.html
 
 web:
-	make docker
-	cp -r ../defs-proposal-report/* ~/Web/Reports/defs-proposal/
+	# make docker
+	cp -r ../r-defs-proposal/* ~/Web/Reports/r-defs-proposal/
 
 zip:
-	make docker
+	# make docker
 	tar zcvf $(TARFILE) ./*
