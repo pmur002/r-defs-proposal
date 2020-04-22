@@ -626,6 +626,62 @@ grid.newpage()
 grid.draw(g)
   </rcode>
 
+  <h3>Patterns</h3>
+  <p>
+    The <code>fill</code> gpar can also be a general pattern that is based
+    on a 'grid' grob. The <code>pattern</code> function takes a grob
+    and draws it as the fill for another grob.
+  </p>
+  <rcode dev="svg" dev.args="list(bg='transparent')" fig.width="2" fig.height="2">
+pat <- pattern(circleGrob(1:3/4, r=unit(5, "mm"), 
+                          gp=gpar(fill=c("red", "green", "blue"))))
+grid.rect(gp=gpar(fill=pat))
+  </rcode>
+  <p>
+    Patterns on grobs are relative to the grob.
+  </p>
+  <rcode dev="svg" dev.args="list(bg='transparent')" fig.width="2" fig.height="2">
+pat <- pattern(circleGrob(1:3/4, r=unit(5, "mm"), 
+                          gp=gpar(fill=c("red", "green", "blue"))))
+grid.rect(width=.5, gp=gpar(fill=pat))
+  </rcode>
+  <p>
+    Patterns on viewports are relative to the viewport.
+  </p>
+  <rcode dev="svg" dev.args="list(bg='transparent')" fig.width="2" fig.height="2">
+pat <- pattern(circleGrob(1:3/4, r=unit(5, "mm"), 
+                          gp=gpar(fill=c("red", "green", "blue"))))
+pushViewport(viewport(gp=gpar(fill=pat)))
+grid.rect(width=.5)
+  </rcode>
+  <p>
+    Patterns are full drawings so can have gradients and clipping (see 
+    "Clipping paths" below).
+  </p>
+  <rcode dev="svg" dev.args="list(bg='transparent')" fig.width="2" fig.height="2">
+pat <- circleGrob(1:3/4, r=unit(5, "mm"),
+                  vp=viewport(clip=rectGrob(height=unit(5, "mm")),
+                              gp=gpar(fill=linearGradient(y1=.5, y2=.5))))
+grid.rect(gp=gpar(fill=pattern(pat)))
+  </rcode>
+  <p>
+    One way to generate a pattern that fills the page is to 
+    write a grob with a <code>makeContent</code> method.
+  </p>
+  <rcode dev="svg" dev.args="list(bg='transparent')" fig.width="2" fig.height="2">
+pat <- grob(cl="polkadots", gp=gpar(col=NA, fill="grey"))
+makeContent.polkadots <- function(x) {
+    w <- convertWidth(unit(1, "npc"), "cm", valueOnly=TRUE)
+    h <- convertHeight(unit(1, "npc"), "cm", valueOnly=TRUE)
+    x <- seq(0, ceiling(w))
+    y <- seq(0, ceiling(h))
+    xy <- expand.grid(x, y)
+    circleGrob(xy$Var1, xy$Var2, r=unit(3, "mm"), default.units="cm")
+}
+pushViewport(viewport(gp=gpar(fill=pattern(pat))))
+grid.rect(width=.5)
+  </rcode>  
+
   <h3>Clipping paths</h3>
   <p>
     The <code>clip</code> argument for the <code>viewport</code> function
@@ -832,6 +888,34 @@ grid.text("testing", gp=gpar(cex=3))
     When starting a new page, 'grid' releases all patterns.
   </p>
 
+  <h3>Patterns</h3>
+  <p>
+    Patterns use the same <code>R_GE_context</code> slot as gradients;
+    a drawing can have a gradient OR a pattern fill OR a normal fill.
+    Patterns are passed to graphics devices via the same 
+    <code>setPattern</code> device function.
+  </p>
+  <p>
+    There is a <code>grDevices::functionPattern</code> function for
+    'graphics' and 'grid' to use to create a pattern.
+  </p>
+  <p>
+    'grid' creates a <code>GridFunctionPattern</code> object,
+    which is a list with a component, <code>f</code>,
+    that contains a function to draw the grob that defines the pattern.
+  </p>
+  <p>
+    The Cairo graphics device creates a pattern by running the pattern
+    function within a <code>cairo_push_group</code> and 
+    <code>cairo_pop_group</code>.  This means that the pattern
+    is drawn on a temporary surface and that drawing is turned into
+    a Cairo pattern to use as the source for filling other drawing.
+  </p>
+  <p>
+    The same pattern resolution in 'grid' is used as for gradients;
+    the same pattern array on the Cairo device is used as for gradients.
+  </p>
+  
   <h3>Clipping paths</h3>
   <p>
     A <code>setClipPath</code> device function has been added to allow
