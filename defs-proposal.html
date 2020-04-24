@@ -838,6 +838,53 @@
 <span class="hl kwd">grid.text</span><span class="hl std">(</span><span class="hl str">&quot;testing&quot;</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">cex</span><span class="hl std">=</span><span class="hl num">3</span><span class="hl std">))</span>
 </pre></div>
 </div><div class="rimage default"><img src="figure/unnamed-chunk-21-1.svg" title="plot of chunk unnamed-chunk-21" alt="plot of chunk unnamed-chunk-21" class="plot" /></div></div>
+    <h3>Masks</h3>
+    <p>
+    A 'grid' viewport can now have a <code>mask</code> (in addition to
+    <code>clip</code>).  This value should be either <code>"inherit"</code>
+    (the default), in which case the viewport inherits the mask from
+    its parent, <code>"none"</code>, in which case the viewport does not
+    mask its content, or a 'grid' grob that defines a new mask for the
+    viewport.
+  </p>
+    <p>
+    The following example defines a circle grob with a 
+    radial gradient fill that
+    starts at black in the centre and gradually transitions to
+    transparent at the circumference.
+    A viewport is pushed with this circle grob as the mask, then
+    a rectangle is drawn half the width of the viewport and 
+    filled with solid black.
+    The result is that only the parts of the rectangle where
+    the mask is non-transparent are drawn;  the retangle is filtered
+    by the mask.
+  </p>
+<div class="chunk" id="unnamed-chunk-22"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">mask</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">circleGrob</span><span class="hl std">(</span><span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">NA</span><span class="hl std">,</span>
+                           <span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl kwd">radialGradient</span><span class="hl std">(</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;black&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;transparent&quot;</span><span class="hl std">))))</span>
+<span class="hl kwd">pushViewport</span><span class="hl std">(</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">mask</span><span class="hl std">=mask))</span>
+<span class="hl kwd">grid.rect</span><span class="hl std">(</span><span class="hl kwc">width</span><span class="hl std">=</span><span class="hl num">.5</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl str">&quot;black&quot;</span><span class="hl std">))</span>
+</pre></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-22-1.svg" title="plot of chunk unnamed-chunk-22" alt="plot of chunk unnamed-chunk-22" class="plot" /></div></div>
+    <p>
+    The following code blends two 'ggplot2' plots using a mask.
+    This time the mask is a linear gradient from black 30%
+    of the way up the page to transparent 70% of the way up the page.
+    First, we draw a plot with the default ggplot2 them, 
+    then we draw a black-and-white themed version of the same
+    plot on top, using the mask, so from 30% up the page the 
+    black-and-white plot transitions smoothly into the default themed plot.
+  </p>
+<div class="chunk" id="unnamed-chunk-23"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">gg1</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">ggplot</span><span class="hl std">(mtcars)</span> <span class="hl opt">+</span>
+    <span class="hl kwd">geom_point</span><span class="hl std">(</span><span class="hl kwd">aes</span><span class="hl std">(</span><span class="hl kwc">x</span><span class="hl std">=disp,</span> <span class="hl kwc">y</span><span class="hl std">=mpg))</span>
+<span class="hl std">gg2</span> <span class="hl kwb">&lt;-</span> <span class="hl std">gg1</span> <span class="hl opt">+</span>
+    <span class="hl kwd">theme_bw</span><span class="hl std">()</span>
+<span class="hl std">grad</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">linearGradient</span><span class="hl std">(</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;black&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;transparent&quot;</span><span class="hl std">),</span> <span class="hl kwc">x1</span><span class="hl std">=</span><span class="hl num">.5</span><span class="hl std">,</span> <span class="hl kwc">x2</span><span class="hl std">=</span><span class="hl num">.5</span><span class="hl std">,</span> <span class="hl kwc">y1</span><span class="hl std">=</span><span class="hl num">.3</span><span class="hl std">,</span> <span class="hl kwc">y2</span><span class="hl std">=</span><span class="hl num">.7</span><span class="hl std">)</span>
+<span class="hl std">mask</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rectGrob</span><span class="hl std">(</span><span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">NA</span><span class="hl std">,</span> <span class="hl kwc">fill</span><span class="hl std">=grad))</span>
+<span class="hl kwd">print</span><span class="hl std">(gg1)</span>
+<span class="hl kwd">pushViewport</span><span class="hl std">(</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">mask</span><span class="hl std">=mask))</span>
+<span class="hl kwd">print</span><span class="hl std">(gg2,</span> <span class="hl kwc">newpage</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">)</span>
+</pre></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-23-1.svg" title="plot of chunk unnamed-chunk-23" alt="plot of chunk unnamed-chunk-23" class="plot" /></div></div>
     <h2>
       <a name="internals">5. Internal details</a>
     </h2>
@@ -1059,6 +1106,67 @@
   </p>
     <p>
     'grid' releases all clipping paths on a <code>grid.newpage</code>.
+  </p>
+    <h3>Masks</h3>
+    <p>
+    A <code>setMask</code> device function has been added to allow
+    the graphics engine (or graphics systems) to ask a device to 
+    define a mask.  The function takes a <code>mask</code>
+    and a <code>ref</code> and should return a reference to
+    the mask on the device.  All three values are SEXPs,
+    but all the device needs to know about the <code>mask</code> is that
+    it is an R function (with no arguments) that the device should
+    call to create the mask.  As with clipping paths, the references are
+    generated by the device, passed back to the graphics engine, then
+    sent in again to the device.  The graphics engine (or graphics
+    systems) only store the references and pass them back to the device;
+    the references only have
+    meaning within the graphics device.
+  </p>
+    <p>
+    There is also a <code>releaseMask</code> device function,
+    which takes a reference to a mask so that the graphics engine
+    (or graphics systems) can indicate to the device that a mask
+    is no longer required.
+  </p>
+    <p>
+    The Cairo device maintains an array of masks.
+    When a new mask is requested (with a call to 
+    <code>setMask</code>) the device starts a new group
+    (<code>cairo_push_group</code>) so that all drawing
+    on the device is on a temporary surface, calls the mask function,
+    then saves the group as a pattern (<code>cairo_pop_group</code>)
+    on the array of masks and returns the index of the mask in that
+    array.
+  </p>
+    <p>
+    The 'grid' package stores the mask reference that is returned,
+    along with the original <code>"GridMask"</code>, creating a 
+    <code>"GridResolvedMask"</code>.  This enhanced mask
+    object is stored in the pushed viewport so that, when a viewport
+    is revisited, 'grid' can send the reference to the mask
+    as well as the mask itself in the call to <code>setMask</code>;
+    this allows the graphics device to reuse cached masks
+    (if it is set up that way).
+  </p>
+    <p>
+    The Cairo device also keeps track of the current Mask, as an index
+    into its mask array.
+    This starts as -1, which means there is no mask in effect.
+    <code>setMask</code> updates this index, including resetting to
+    -1 if sent a <code>NULL</code> mask.
+  </p>
+    <p>
+    The 'grid' package calls <code>setMask</code> whenever a viewport
+    is pushed or revisited to update the current mask on the device.
+  </p>
+    <p>
+    The shape-drawing functions on the Cairo device check whether
+    the mask is non-negative.  If so, rather than drawing directly,
+    they draw to a temporary surface (<code>cairo_push_group</code>,
+    <code>cairo_pop_group</code>), collect the result as a pattern,
+    then mask the pattern, using the current mask, to draw on the
+    main device surface (<code>cairo_mask</code>).
   </p>
     <h2>
       <a name="discussion">6. Discussion</a>
