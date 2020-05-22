@@ -463,7 +463,7 @@ options(bitmapType="cairo")
     A new <a href="https://svn.r-project.org/R/branches/R-defs/"><code>R-defs</code></a> 
     branch has been created for experimenting.
     So far, that includes the addition of support for
-    linear and radial gradient fills and clipping paths, 
+    linear and radial gradient fills, patterns, clipping paths, and masks
     on Cairo graphics devices,
     with a 'grid' interface.  The following set of examples
     show how the 'grid' interface has been implemented so far.
@@ -587,7 +587,7 @@ grid.rect()
 <!--begin.rcode dev="svg", fig.width=2, fig.height=2
 grid.text("Reveal", gp=gpar(fontface="bold", cex=3))
 grid.rect(gp=gpar(fill=linearGradient(c("white", "transparent"),
-                                      y1=.5, y2=.5)))
+                                      x1=.2, x2=.8, y1=.5, y2=.5)))
   end.rcode-->
     <p>
     The next example shows that radial gradients work via
@@ -761,28 +761,34 @@ pushViewport(viewport(y=1, height=1/3, just="top"))
 grid.text("test three", gp=gpar(cex=3))
   end.rcode-->
     <p>
-    Clipping paths can even contain clipping paths, though this can
-    only make the clipping region <em>smaller</em>.
-  </p>
-    <p>
-    In the following code (after drawing everything in grey),
-    we push a viewport with a clipping path that consists of a circle
-    that is itself drawn within a viewport with a clipping path (that consists
-    of three smaller circles).  When we draw the text "testing" it is clipped
-    to the intersection of the single large circle and the three smaller 
-    circles (in effect, the larger circle clipping path
-    has itself been clipped using the 
-    three smaller circles).
+    Clipping paths are just paths (outlines of shapes), they do not
+    reflect, for example, stroke width or fill colours.
   </p>
 <!--begin.rcode dev="svg", dev.args=list(bg='transparent'), fig.width=2, fig.height=2
-grid.circle(r=.25, gp=gpar(col="grey"))
-cg2 <- circleGrob(x=1:3/4, r=.1, gp=gpar(col="grey"))
-grid.draw(cg2)
-grid.text("testing", gp=gpar(cex=3, col="grey"))
-cg <- circleGrob(r=.25, vp=viewport(clip=cg2))
-pushViewport(viewport(clip=cg))
+path <- circleGrob(r=.3, gp=gpar(lwd=30, col="grey", fill=NA))
+grid.text("testing", gp=gpar(col="grey", cex=3))
+pushViewport(viewport(clip=path))
+grid.draw(path)
+grid.circle(r=.3)
 grid.text("testing", gp=gpar(cex=3))
   end.rcode-->
+    <p>
+    Although a clipping path can be an arbitrary 'grid' grob,
+    clipping and masks (see below) are disallowed within a clipping path.
+    Any viewport that sets <code>clip=TRUE</code> or <code>clip=FALSE</code>
+    or sets <code>clip</code> to be a grob, or that sets <code>mask</code>
+    to be a grob, will generate a warning and the clipping setting
+    (or the mask) will be ignored for determining the clipping path.
+  </p>
+    <p>
+    This constraint has been applied for several reasons:
+    to make life easier for graphics devices;
+    because it is very difficult or impossible to achieve
+    some nested clipping effects on some devices;
+    formats like PDF and SVG enforce limits on what can go
+    in a clipping path;  and fancy clipping shapes can be 
+    achieved by using a mask instead.
+  </p>
     <h3>Masks</h3>
     <p>
     A 'grid' viewport can now have a <code>mask</code> (in addition to
@@ -829,6 +835,25 @@ mask <- rectGrob(gp=gpar(col=NA, fill=grad))
 print(gg1)
 pushViewport(viewport(mask=mask))
 print(gg2, newpage=FALSE)
+  end.rcode-->
+    <p>
+    Here is an example of a relatively complex mask that cannot be 
+    achieved with clipping paths (in the current proposal) because
+    it would require nesting clipping paths.
+    The mask consists of two narrow rectangles, but the left
+    rectangle is drawn within a viewport with a clipping path.
+    The same effect could be achieved by replacing the clipping path
+    with a mask (nested masks are ok).
+  </p>
+<!--begin.rcode dev="svg", dev.args=list(bg='transparent'), fig.width=2, fig.height=2, fig.keep="last"
+mask <- gTree(children=gList(rectGrob(x=.25, width=.3, height=.8,
+                                      gp=gpar(fill="black"),
+                                      vp=viewport(clip=circleGrob(r=.4))),
+                             rectGrob(x=.75, width=.3, height=.8,
+                                      gp=gpar(fill="black"))))
+pushViewport(viewport(mask=mask))
+grid.rect(gp=gpar(fill="grey"))
+popViewport()
   end.rcode-->
     <h2>
       <a name="internals">5. Internal details</a>
@@ -1021,7 +1046,8 @@ print(gg2, newpage=FALSE)
     After the R function has run, the path is closed and the clipping
     region is set from the path.
     The path is also saved in the array of clipping paths and 
-    an integer index to array is returned as the reference.
+    an integer index to array is returned as the reference (as an
+    R integer vector).
   </p>
     <p>
     The 'grid' package stores the clipping path reference that is returned,
@@ -1038,16 +1064,6 @@ print(gg2, newpage=FALSE)
     to <code>setClipPath</code> is non-NULL, in which case it looks
     up the relevant clipping path in its array of clipping paths
     and reuses that, rather than generating a new clipping path.
-  </p>
-    <p>
-    To allow for clipping paths within clipping paths, 
-    the Cairo device "stacks" clipping paths (and clipping path
-    references) if it gets a call to <code>setClipPath</code>
-    within "append mode".  In this case, the reference returned
-    is a vector of integer indexes into the array of clipping paths.
-    (The 'grid' package does not need to know anything about this detail
-    because all it does is store and send the reference value that 
-    <code>setClipPath</code> returns.)
   </p>
     <p>
     'grid' releases all clipping paths on a <code>grid.newpage</code>.
@@ -1190,6 +1206,58 @@ print(gg2, newpage=FALSE)
     A device 
     must implement <code>dev-&gt;releaseClipPath</code>, but can just do nothing.
   </p>
+    <p>
+    A device must implement
+    <code>dev-&gt;setMask</code>, but can just return <code>NULL</code>.
+    As with clipping paths, there are three levels of support:
+    none, non-caching, and caching.
+  </p>
+    <p>
+    A device 
+    must implement <code>dev-&gt;releaseMask</code>, but can just do nothing.
+  </p>
+    <p>
+    As an example of the (minimal) changes necessary to update a device
+    (WITHOUT support for any of the new features), the following
+    diff shows the changes to get the <code>quartz</code> device
+    running on macOS (at r78533).
+  </p>
+    <pre>
+@@ -371,6 +371,12 @@
++static int      RQuartz_setPattern(SEXP pattern, pDevDesc dd);
++static void     RQuartz_releasePattern(int index, pDevDesc dd);
++static SEXP     RQuartz_setClipPath(SEXP path, SEXP ref, pDevDesc dd);
++static void     RQuartz_releaseClipPath(SEXP ref, pDevDesc dd);
++static SEXP     RQuartz_setMask(SEXP path, SEXP ref, pDevDesc dd);
++static void     RQuartz_releaseMask(SEXP ref, pDevDesc dd);
+
+@@ -430,6 +436,13 @@
++    dev-&gt;setPattern      = RQuartz_setPattern;
++    dev-&gt;releasePattern  = RQuartz_releasePattern;
++    dev-&gt;setClipPath     = RQuartz_setClipPath;
++    dev-&gt;releaseClipPath = RQuartz_releaseClipPath;
++    dev-&gt;setMask         = RQuartz_setMask;
++    dev-&gt;releaseMask     = RQuartz_releaseMask;
+
+@@ -1282,6 +1295,24 @@
++static int RQuartz_setPattern(SEXP pattern, pDevDesc dd) {
++    return -1;
++}
++
++static void RQuartz_releasePattern(int index, pDevDesc dd) {} 
++
++static SEXP RQuartz_setClipPath(SEXP path, SEXP ref, pDevDesc dd) {
++    return R_NilValue;
++}
++
++static void RQuartz_releaseClipPath(SEXP ref, pDevDesc dd) {}
++
++static SEXP RQuartz_setMask(SEXP path, SEXP ref, pDevDesc dd) {
++    return R_NilValue;
++}
++
++static void RQuartz_releaseMask(SEXP ref, pDevDesc dd) {}
+  </pre>
     <p>
     The plan is to implement at least one caching device (Cairo,
     plus maybe PDF), a non-caching device (always generates new definition

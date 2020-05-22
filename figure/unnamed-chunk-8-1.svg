@@ -21,7 +21,7 @@
 <path style="stroke:none;" d="M 7.453125 -26.25 L 2.40625 -26.25 L 2.40625 0 L 7.453125 0 Z M 7.453125 -26.25 "/>
 </symbol>
 </g>
-<linearGradient id="linear0" gradientUnits="userSpaceOnUse" x1="0" y1="72" x2="144" y2="72" >
+<linearGradient id="linear0" gradientUnits="userSpaceOnUse" x1="28.8" y1="72" x2="115.2" y2="72" >
 <stop offset="0" style="stop-color:rgb(100%,100%,100%);stop-opacity:1;"/>
 <stop offset="1" style="stop-color:rgb(100%,100%,100%);stop-opacity:0;"/>
 </linearGradient>
