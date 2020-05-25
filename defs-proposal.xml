@@ -863,14 +863,14 @@ popViewport()
     property has been added to the <code>R_GE_gcontext</code> 
     (graphical context)
     in the graphics engine.
-    This property can be either <code>-1</code> 
-    (indicating no pattern fill) or a non-negative integer, which
-    represents an index into the set of current pattern fills on
+    This property can be either <code>NULL</code> 
+    (indicating no pattern fill) or an R object, which
+    represents a reference to one of the current pattern fills on
     the graphics device.
   </p>
     <p>
     This property is in addition to the existing <code>fill</code>
-    property.  If <code>patternFill</code> is non-negative
+    property.  If <code>patternFill</code> is non-<code>NULL</code>
     then it overrides <code>fill</code>.  This makes it easy
     for a graphics device to ignore <code>patternFill</code> 
     if it wants to.
@@ -888,17 +888,19 @@ popViewport()
     A <code>setPattern</code> device function has been added to
     allow the graphics engine to ask a graphics device to create
     a pattern.  The function takes a <code>"Pattern"</code> object
-    (either a linear or radial gradient so far) and returns an integer
-    (to be used in the <code>patternFill</code>).
+    (either a linear or radial gradient so far) and returns an R object
+    (a reference to be used in a <code>patternFill</code> call).
   </p>
     <p>
-    (A graphics device can just always return 0 if it generates
+    (A graphics device can just always return <code>NULL</code>
+    if it generates
     a new pattern every time <code>setPattern</code> is called ?)
   </p>
     <p>
     There is also a <code>releasePattern</code> device function
     so that, e.g., 'grid' can release a pattern that is just set on
-    a grob (and release all patterns on new page).  Specify -1
+    a grob (and release all patterns on new page).  Specify 
+    <code>NULL</code>
     to release all patterns.
   </p>
     <p>
@@ -947,15 +949,15 @@ popViewport()
     <p>
     'grid' calls <code>setPattern</code> to "resolve" a pattern
     and generates a <code>GridResolvedPattern</code>, which contains
-    the integer index from <code>setPattern</code>.  This allows
-    'grid' to reuse the pattern index, e.g., when drawing
+    the reference from <code>setPattern</code>.  This allows
+    'grid' to reuse the pattern reference, e.g., when drawing
     multiple shapes from a single grob, or when revisiting a 
     viewport (so that it does not have to ask the graphics device
     for a new pattern for every shape or for every visit to a viewport).
   </p>
     <p>
     When drawing a grob, 'grid' resolves the pattern relative to the grob,
-    gets the pattern index and uses that for every shape that is drawn
+    gets the pattern reference and uses that for every shape that is drawn
     from this grob, then releases the pattern.
   </p>
     <p>
