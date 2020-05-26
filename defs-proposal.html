@@ -154,23 +154,6 @@
     including the changes that would be imposed
     on graphics device maintainers.
   </p>
-    <p>
-    I would especially welcome feedback on the following questions:
-  </p>
-    <ul>
-      <li>
-      R core:  some of the new "graphics engine" C code, e.g., 
-      <code>patterns.c</code> has been put in 
-      <code>src/main</code> rather than <code>src/library/grDevices/src</code>
-      so that it is easy for external graphics devices to access it.
-      Is there a better way? 
-    </li>
-    </ul>
-    <ul>
-      <li>
-      RStudio:  will the RStudioGD device be able to support any of this stuff?
-    </li>
-    </ul>
     <div>
       <h2>Table of Contents:</h2>
       <ul style="list-style: none">
@@ -524,8 +507,12 @@
     show how the 'grid' interface has been implemented so far.
   </p>
     <p>
-      <strong>NOTE: you should only try these examples on a Cairo device
-    (unless you have a fetish for segfaults).</strong>
+      <strong>NOTE: support for graphics definitions has only been implemented
+    for Cairo-based graphics devices so far.  Other graphics devices 
+    should run, but will not produce output from graphics definitions.
+    Third-party graphics devices will hopefully error out (if they make
+    use of <code>R_GE_checkVersionOrDie</code>), but otherwise they
+    are likely to segfault until they are updated.</strong>
     </p>
     <h3>Gradients</h3>
     <p>
@@ -1230,12 +1217,11 @@
   </p>
     <p>
     A device must implement <code>dev-&gt;setPattern</code>, but it can just
-    return -1 if unsupported.  
-    (We could provide graphics engine function to use for unimplemented.)
-    (We could provide graphics engine constant instead of -1.)
+    return <code>NULL</code> if unsupported.  
     A device can also just create a new pattern every time.
-    If it returns a meaningful pattern index, it must do something sensible
-    with that index when provided via <code>R_GE_gcontent.patternFill</code>.
+    If it returns a meaningful pattern reference, it must do something sensible
+    with that reference 
+    when provided via <code>R_GE_gcontent.patternFill</code>.
   </p>
     <p>
     A device 
@@ -1438,6 +1424,7 @@
     DVI specials (?)
     TODO: look at what 'showtext' and 'tikzDevice' need to do
     and how they currently work around the graphics engine.
+    Another example that has been mentioned is hyperlinks.
   </p>
     <p>
     Probably also best as a separate, future project.
