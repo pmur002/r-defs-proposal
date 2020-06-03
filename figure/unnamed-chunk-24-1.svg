@@ -13,7 +13,7 @@
 <clipPath id="clip1">
   <rect x="0" y="0" width="144" height="144"/>
 </clipPath>
-<g id="surface1451" clip-path="url(#clip1)">
+<g id="surface1601" clip-path="url(#clip1)">
 <g clip-path="url(#clip2)" clip-rule="nonzero">
 <g clip-path="url(#clip3)" clip-rule="nonzero">
 <path style="fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:1;stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 14.398438 129.601562 L 57.597656 129.601562 L 57.597656 14.402344 L 14.398438 14.402344 Z M 14.398438 129.601562 "/>
@@ -23,18 +23,18 @@
 </g>
 <mask id="mask0">
   <g filter="url(#alpha)">
-<use xlink:href="#surface1451"/>
+<use xlink:href="#surface1601"/>
   </g>
 </mask>
 <clipPath id="clip4">
   <rect x="0" y="0" width="144" height="144"/>
 </clipPath>
-<g id="surface1450" clip-path="url(#clip4)">
+<g id="surface1600" clip-path="url(#clip4)">
 <rect x="0" y="0" width="144" height="144" style="fill:rgb(74.509804%,74.509804%,74.509804%);fill-opacity:1;stroke:none;"/>
 <path style="fill:none;stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 0 144 L 144 144 L 144 0 L 0 0 Z M 0 144 "/>
 </g>
 </defs>
-<g id="surface1445">
-<use xlink:href="#surface1450" mask="url(#mask0)"/>
+<g id="surface1595">
+<use xlink:href="#surface1600" mask="url(#mask0)"/>
 </g>
 </svg>

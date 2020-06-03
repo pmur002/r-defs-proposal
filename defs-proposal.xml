@@ -458,6 +458,11 @@ options(bitmapType="cairo")
     use of <code>R_GE_checkVersionOrDie</code>), but otherwise they
     are likely to segfault until they are updated.</strong>
     </p>
+    <p>
+    On the positive side, Cairo devices can be used on all major platforms,
+    so there is already an option for accessing these new features
+    on all major platforms.
+  </p>
     <h3>Gradients</h3>
     <p>
     The <code>fill</code> gpar can now be a linear gradient 
@@ -1116,6 +1121,58 @@ popViewport()
     <code>cairo_pop_group</code>), collect the result as a pattern,
     then mask the pattern, using the current mask, to draw on the
     main device surface (<code>cairo_mask</code>).
+  </p>
+    <h3>PDF device</h3>
+    <p>
+    Gradients and clipping paths have also been implemented on
+    the <code>pdf</code> graphics device.
+  </p>
+    <p>
+    The <code>pdf</code> device maintains an array of "definitions",
+    which are basically strings of PDF code.
+  </p>
+    <p>
+    Resolving a gradient (via <code>setPattern</code>) creates
+    a definition that contains the PDF code defining the gradient
+    and the array index to that definition is returned as the
+    reference.
+    When a shape is drawn with a gradient fill, code something like
+    <code>/Def3 scn</code> is generated to indicate that definition 3 
+    (a gradient) is to be used as the fill colour.
+    On <code>dev.off</code>, definition strings are written out at the end of
+    the PDF file and the link between <code>/Def3</code> and the
+    appripriate PDF object number is resolved.
+  </p>
+    <p>
+    Semi-transparent gradients are a bit more complicated because
+    they require creating an additional "soft mask" definition.
+    In this case, the reference returned is two array indices, one for
+    the gradient and one for the soft mask.
+    When a shape is drawn with a semi-transparent gradient fill an
+    additional piece of code, something like <code>/Def4 gs</code>
+    is generated to enforce the soft mask for the gradient fill.
+    Again, the actual definition string for the soft mask is written
+    out at the end of the PDF file, when links between definition names
+    and object numbers are resolved.
+  </p>
+    <p>
+    Resolving a clipping path (via <code>setClipPath</code>) creates
+    a definition that contains the PDF code that draws the clipping path.
+    Again, the array index of that definition is returned as the reference.
+    The <code>setClipPath</code> call also writes the definition string
+    out (plus <code>W n</code> to enforce the clipping path), but
+    it can simply reuse the definition string (rather than regenerating it)
+    if the reference is not <code>NULL</code>.
+    A clipping path definition is NOT written out at the end of the file
+    (because it is written inline whenever a clipping path is set).
+  </p>
+    <p>
+    This implementation on the <code>pdf</code> device 
+    provides some evidence that the overall design of graphics 
+    definitions support has not been too
+    tightly coupled with the Cairo graphics devices, which gives
+    some hope that other graphics devices will be able to implement
+    at least some of these features.
   </p>
     <h2>
       <a name="discussion">6. Discussion</a>
