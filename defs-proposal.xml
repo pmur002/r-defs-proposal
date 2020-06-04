@@ -1122,7 +1122,7 @@ popViewport()
     then mask the pattern, using the current mask, to draw on the
     main device surface (<code>cairo_mask</code>).
   </p>
-    <h3>PDF device</h3>
+    <h3>The <code>pdf</code> device</h3>
     <p>
     Gradients and clipping paths have also been implemented on
     the <code>pdf</code> graphics device.
@@ -1165,6 +1165,11 @@ popViewport()
     if the reference is not <code>NULL</code>.
     A clipping path definition is NOT written out at the end of the file
     (because it is written inline whenever a clipping path is set).
+  </p>
+    <p>
+    A limitation:  the fill rule used by the clipping operator follows
+    the device fill rule.  So it is possible to add a path with one
+    fill rule, but have the clipping path use a different fill rule.
   </p>
     <p>
     This implementation on the <code>pdf</code> device 
@@ -1376,6 +1381,11 @@ popViewport()
     whether the device is "appending" or "drawing");  how to
     make sure we elegantly unwind when an error occurs (e.g.,
     when hit an error while playing/recording a clipping path) ?
+    One defence being employed for Cairo and PDF devices is
+    to only produce warnings rather than errors when things go
+    wrong (in the case of PDF, ask the use politely to shut down
+    the PDF device).  Also, modes are reset on new page, so it 
+    may be possible to recover a corrupted device by starting a new page.
   </p>
     <p>
     What will the impact be on saved/restored plots ?
@@ -1383,6 +1393,18 @@ popViewport()
     I have some test cases working within-session.
     It would certainly be a bad idea to save from R 4 and replay
     in R 3 (though the reverse should be ok?).
+  </p>
+    <p>
+    The fact that clipping paths (mostly) and masks can be arbitrary
+    'grid' grobs places a reasonable burden on the graphics device.
+    The device has to evaluate an R function and capture the
+    resulting output.  A possible future path for devices that 
+    cannot meet these demands may be to allow alternate objects 
+    as clipping paths and masks.  Currently, the SEXP sent to the
+    device is an R function, but that could conceivably be 
+    limited to simpler R objects, like a simpler description of 
+    one or more shapes.  That might make the device's job a LOT
+    easier.
   </p>
     <h3>'gridSVG'</h3>
     <p>
