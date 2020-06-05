@@ -502,20 +502,23 @@
     branch has been created for experimenting.
     So far, that includes the addition of support for
     linear and radial gradient fills, patterns, clipping paths, and masks
-    on Cairo graphics devices,
+    on both Cairo graphics devices and the <code>pdf</code> device
+    (except for patterns),
     with a 'grid' interface.  The following set of examples
     show how the 'grid' interface has been implemented so far.
   </p>
     <p>
       <strong>NOTE: support for graphics definitions has only been implemented
-    for Cairo-based graphics devices so far.  Other graphics devices 
+    for Cairo-based graphics devices and the <code>pdf</code> device
+    so far.  Other graphics devices 
     should run, but will not produce output from graphics definitions.
     Third-party graphics devices will hopefully error out (if they make
     use of <code>R_GE_checkVersionOrDie</code>), but otherwise they
     are likely to segfault until they are updated.</strong>
     </p>
     <p>
-    On the positive side, Cairo devices can be used on all major platforms,
+    On the positive side, Cairo devices and the <code>pdf</code> device
+    can be used on all major platforms,
     so there is already an option for accessing these new features
     on all major platforms.
   </p>
@@ -1180,7 +1183,7 @@
   </p>
     <h3>The <code>pdf</code> device</h3>
     <p>
-    Gradients and clipping paths have also been implemented on
+    Gradients and clipping paths and masks have also been implemented on
     the <code>pdf</code> graphics device.
   </p>
     <p>
@@ -1226,6 +1229,27 @@
     A limitation:  the fill rule used by the clipping operator follows
     the device fill rule.  So it is possible to add a path with one
     fill rule, but have the clipping path use a different fill rule.
+  </p>
+    <p>
+    Resolving a mask (via <code>setMask</code>) creates a definition
+    that contains the PDF code that defines the mask content.
+    Masks are implemented as alpha soft masks.
+    The array index of that definition is returned as the reference.
+    Mask definitions are stored and written out at the end of the PDF file,
+    when links between definition names and object numbers are resolved.
+    The PDF device monitors whether a mask is currently defined and,
+    when drawing normally, if a mask is defined it is enforced with
+    code something like <code>/Def5 gs</code>.
+  </p>
+    <p>
+    Unlike clipping paths, it is valid to nest masks within masks
+    (and gradients and clipping paths within masks); masks are 
+    essentially self-contained drawings.
+    This can be accommodated by the PDF device because all of these
+    features are just stored in definitions as the mask content 
+    is captured, and then the definitions are written to file at the
+    end, and only references to other definitions are recored in
+    the mask content.
   </p>
     <p>
     This implementation on the <code>pdf</code> device 
