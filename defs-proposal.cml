@@ -1350,6 +1350,19 @@ popViewport()
     there is a problem and that caching is helpful (or not).
   </p>
 
+  <h3>TODOs</h3>
+  <p>
+    Neither Cairo nor PDF devices have currently attempted to 
+    include text output in clipping paths or masks.
+  </p>
+  <p>
+    The R graphics engine does not accommodate the idea of a 
+    gradient fill within text.
+  </p>
+  <p>
+    The PDF device does not (yet) allow rasters within masks.
+  </p>
+
   <h3>Issues</h3>
   <!--
   <p>
