@@ -730,19 +730,23 @@
 </pre></div>
 </div><div class="rimage default"><img src="figure/unnamed-chunk-16-1.svg" title="plot of chunk unnamed-chunk-16" alt="plot of chunk unnamed-chunk-16" class="plot" /></div></div>
     <p>
-    One way to generate a pattern that fills the page is to 
-    write a grob with a <code>makeContent</code> method.
+    Patterns can "extend" like gradient fills;  probably the most
+    typical use of a pattern will draw a simple shape and then
+    specify <code>extend="repeat"</code>
+    to fill a region.
+    To do this, we must specify a size for the pattern (this specifies
+    a "size" for the "tile" that gets repeated).
+    For example, the code below fills a rectangle with a polka-dot
+    pattern by specifying a circle as the pattern and specifying that
+    the pattern size is just a little bit larger than the circle
+    and specifying that the pattern repeats.
   </p>
-<div class="chunk" id="unnamed-chunk-17"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">pat</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">grob</span><span class="hl std">(</span><span class="hl kwc">cl</span><span class="hl std">=</span><span class="hl str">&quot;polkadots&quot;</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">NA</span><span class="hl std">,</span> <span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl str">&quot;grey&quot;</span><span class="hl std">))</span>
-<span class="hl std">makeContent.polkadots</span> <span class="hl kwb">&lt;-</span> <span class="hl kwa">function</span><span class="hl std">(</span><span class="hl kwc">x</span><span class="hl std">) {</span>
-    <span class="hl std">w</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">convertWidth</span><span class="hl std">(</span><span class="hl kwd">unit</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span> <span class="hl str">&quot;npc&quot;</span><span class="hl std">),</span> <span class="hl str">&quot;cm&quot;</span><span class="hl std">,</span> <span class="hl kwc">valueOnly</span><span class="hl std">=</span><span class="hl num">TRUE</span><span class="hl std">)</span>
-    <span class="hl std">h</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">convertHeight</span><span class="hl std">(</span><span class="hl kwd">unit</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span> <span class="hl str">&quot;npc&quot;</span><span class="hl std">),</span> <span class="hl str">&quot;cm&quot;</span><span class="hl std">,</span> <span class="hl kwc">valueOnly</span><span class="hl std">=</span><span class="hl num">TRUE</span><span class="hl std">)</span>
-    <span class="hl std">x</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">seq</span><span class="hl std">(</span><span class="hl num">0</span><span class="hl std">,</span> <span class="hl kwd">ceiling</span><span class="hl std">(w))</span>
-    <span class="hl std">y</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">seq</span><span class="hl std">(</span><span class="hl num">0</span><span class="hl std">,</span> <span class="hl kwd">ceiling</span><span class="hl std">(h))</span>
-    <span class="hl std">xy</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">expand.grid</span><span class="hl std">(x, y)</span>
-    <span class="hl kwd">circleGrob</span><span class="hl std">(xy</span><span class="hl opt">$</span><span class="hl std">Var1, xy</span><span class="hl opt">$</span><span class="hl std">Var2,</span> <span class="hl kwc">r</span><span class="hl std">=</span><span class="hl kwd">unit</span><span class="hl std">(</span><span class="hl num">3</span><span class="hl std">,</span> <span class="hl str">&quot;mm&quot;</span><span class="hl std">),</span> <span class="hl kwc">default.units</span><span class="hl std">=</span><span class="hl str">&quot;cm&quot;</span><span class="hl std">)</span>
-<span class="hl std">}</span>
-<span class="hl kwd">pushViewport</span><span class="hl std">(</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl kwd">pattern</span><span class="hl std">(pat))))</span>
+<div class="chunk" id="unnamed-chunk-17"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">pat</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">pattern</span><span class="hl std">(</span><span class="hl kwd">circleGrob</span><span class="hl std">(</span><span class="hl kwc">r</span><span class="hl std">=</span><span class="hl kwd">unit</span><span class="hl std">(</span><span class="hl num">3</span><span class="hl std">,</span> <span class="hl str">&quot;mm&quot;</span><span class="hl std">),</span>
+                          <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">NA</span><span class="hl std">,</span> <span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl str">&quot;grey&quot;</span><span class="hl std">)),</span>
+               <span class="hl kwc">width</span><span class="hl std">=</span><span class="hl kwd">unit</span><span class="hl std">(</span><span class="hl num">8</span><span class="hl std">,</span> <span class="hl str">&quot;mm&quot;</span><span class="hl std">),</span>
+               <span class="hl kwc">height</span><span class="hl std">=</span><span class="hl kwd">unit</span><span class="hl std">(</span><span class="hl num">8</span><span class="hl std">,</span> <span class="hl str">&quot;mm&quot;</span><span class="hl std">),</span>
+               <span class="hl kwc">extend</span><span class="hl std">=</span><span class="hl str">&quot;repeat&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">pushViewport</span><span class="hl std">(</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">fill</span><span class="hl std">=pat)))</span>
 <span class="hl kwd">grid.rect</span><span class="hl std">(</span><span class="hl kwc">width</span><span class="hl std">=</span><span class="hl num">.5</span><span class="hl std">)</span>
 </pre></div>
 </div><div class="rimage default"><img src="figure/unnamed-chunk-17-1.svg" title="plot of chunk unnamed-chunk-17" alt="plot of chunk unnamed-chunk-17" class="plot" /></div></div>
@@ -1032,13 +1036,14 @@
     <code>setPattern</code> device function.
   </p>
     <p>
-    There is a <code>grDevices::functionPattern</code> function for
+    There is a <code>grDevices::tilingPattern</code> function for
     'graphics' and 'grid' to use to create a pattern.
   </p>
     <p>
-    'grid' creates a <code>GridFunctionPattern</code> object,
+    'grid' creates a <code>GridTilingPattern</code> object,
     which is a list with a component, <code>f</code>,
-    that contains a function to draw the grob that defines the pattern.
+    that contains a function to draw the grob that defines the pattern,
+    plus the location, size, and extend rule for the pattern.
   </p>
     <p>
     The Cairo graphics device creates a pattern by running the pattern
@@ -1215,9 +1220,31 @@
     and object numbers are resolved.
   </p>
     <p>
+    Resolving a pattern creates a definition that contains PDF code
+    to define the pattern, with the array index of that definition
+    returned as a reference.
+    The definition of a pattern contains a "stream" of drawing code,
+    which is obtained by evaluating the R function from the pattern
+    and capturing its output within a temporary definition
+    (that is copied to the pattern definition and not written
+    out itself).
+    When a shape is drawn with a pattern fill, the pattern is set
+    as the fill colour as for gradient fills.
+    Pattern definitions are stored and written out at the end of the PDF file,
+    when links between definition names and object numbers are resolved.
+    An added complication with patterns
+    is that the definition is actually only finalised
+    at this point because the pattern must contain its own Resources
+    Dictionary (it cannot just refer to the document's Resource Dictionary
+    because that contains a reference to the pattern itself!).
+  </p>
+    <p>
     Resolving a clipping path (via <code>setClipPath</code>) creates
     a definition that contains the PDF code that draws the clipping path.
     Again, the array index of that definition is returned as the reference.
+    The PDF code describing the clipping path is obtained by
+    evaluating the R function for the clipping path and capturing
+    the output within the clipping path definition.
     The <code>setClipPath</code> call also writes the definition string
     out (plus <code>W n</code> to enforce the clipping path), but
     it can simply reuse the definition string (rather than regenerating it)
@@ -1234,6 +1261,9 @@
     Resolving a mask (via <code>setMask</code>) creates a definition
     that contains the PDF code that defines the mask content.
     Masks are implemented as alpha soft masks.
+    The mask is described by a "stream" of PDF code that is obtained
+    by evaluating the R function for the mask and capturing its output
+    within a temporary definition (as for patterns).
     The array index of that definition is returned as the reference.
     Mask definitions are stored and written out at the end of the PDF file,
     when links between definition names and object numbers are resolved.
@@ -1295,6 +1325,39 @@
     ability to make use of additional graphics features too.
     As one piece of hard evidence, this work is being partially funded by 
     a donation from R Studio to the University of Auckland Foundation.
+  </p>
+    <h3>Design</h3>
+    <p>
+    The design of the API for these new features has been focused
+    on flexibility - making things possible.
+    This is reflected particularly in the 'grid' API where clipping
+    paths, patterns, and masks are all defined in terms of a grob.
+  </p>
+    <p>
+    This flexibility is good in the sense that it makes reasonably complex
+    things possible (e.g., masks containing patterns and clipping paths),
+    but it does place a reasonable burden on the graphics devices.
+    For example, graphics devices must be written to allow for recursion;
+    drawing of a shape may trigger drawing of further shapes (e.g., in order
+    to resolve the fill pattern for the original shape).
+  </p>
+    <p>
+    This flexibility may also impact on efficiency.  For example, it is
+    only currently possible to specify a single pattern fill for a grob
+    (which may draw multiple shapes);  pattern fills are not vectorised.
+  </p>
+    <p>
+    As use-cases appear, there may be a need for adding a simpler interface
+    for patterns, masks, and clipping paths, both to allow graphics devices
+    to support a less flexible API (with less effort) and to allow 
+    greater efficiency when drawing a large number of shapes.
+  </p>
+    <p>
+    Fortunately, the current API passes an SEXP as the specification for 
+    a pattern or clipping
+    path or mask to resolve, so it should be possible in future to
+    pass other obects via this interface with, say, classes used to
+    distinguish between different sorts of specifications.
   </p>
     <h3>External graphics devices</h3>
     <p>
@@ -1442,7 +1505,7 @@
     gradient fill within text.
   </p>
     <p>
-    The PDF device does not (yet) allow rasters within masks.
+    The PDF device does not (yet) allow rasters within patterns or masks.
   </p>
     <h3>Issues</h3>
     <!--
@@ -1497,6 +1560,16 @@
     limited to simpler R objects, like a simpler description of 
     one or more shapes.  That might make the device's job a LOT
     easier.
+  </p>
+    <p>
+    PDF viewers:  can get some variation between viewers
+    (e.g., evince, xpdf, gs/gv, and firefox).
+    Can also get (bigger) variation between versions of viewers.
+    This bites harder for more complex drawings.
+    For example, nested tiling patterns are NOT good in
+    gv 3.7.4, xpdf 3.04, and evince 3.18.2 (Ubuntu 16.04),
+    but are fine in 
+    gv ??, xpdf ??, and evince ?? (Ubuntu 18.04).
   </p>
     <h3>'gridSVG'</h3>
     <p>

@@ -9,24 +9,24 @@
 <stop offset="1" style="stop-color:rgb(100%,100%,100%);stop-opacity:0;"/>
 </radialGradient>
 <clipPath id="clip1">
-  <rect x="0" y="0" width="144" height="144"/>
+  <rect width="144" height="144"/>
 </clipPath>
-<g id="surface321" clip-path="url(#clip1)">
+<g id="surface322" clip-path="url(#clip1)">
 <path style=" stroke:none;fill-rule:nonzero;fill:url(#radial0);" d="M 144 72 C 144 111.765625 111.765625 144 72 144 C 32.234375 144 0 111.765625 0 72 C 0 32.234375 32.234375 0 72 0 C 111.765625 0 144 32.234375 144 72 "/>
 </g>
 <mask id="mask0">
   <g filter="url(#alpha)">
-<use xlink:href="#surface321"/>
+<use xlink:href="#surface322"/>
   </g>
 </mask>
 <clipPath id="clip2">
-  <rect x="0" y="0" width="144" height="144"/>
+  <rect width="144" height="144"/>
 </clipPath>
-<g id="surface320" clip-path="url(#clip2)">
+<g id="surface319" clip-path="url(#clip2)">
 <path style="fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:1;stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 36 144 L 108 144 L 108 0 L 36 0 Z M 36 144 "/>
 </g>
 </defs>
 <g id="surface315">
-<use xlink:href="#surface320" mask="url(#mask0)"/>
+<use xlink:href="#surface319" mask="url(#mask0)"/>
 </g>
 </svg>

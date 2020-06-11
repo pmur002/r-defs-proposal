@@ -23,22 +23,25 @@
 <stop offset="1" style="stop-color:rgb(100%,100%,100%);stop-opacity:1;"/>
 </linearGradient>
 <clipPath id="clip1">
-  <rect x="0" y="0" width="144" height="144"/>
+  <rect width="144" height="144"/>
 </clipPath>
-<g id="surface226" clip-path="url(#clip1)">
+<g id="surface227" clip-path="url(#clip1)">
 <g clip-path="url(#clip2)" clip-rule="nonzero">
-<path style="fill-rule:nonzero;fill:url(#linear0);stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 50.171875 72 C 50.171875 79.828125 43.828125 86.171875 36 86.171875 C 28.171875 86.171875 21.828125 79.828125 21.828125 72 C 21.828125 64.171875 28.171875 57.828125 36 57.828125 C 43.828125 57.828125 50.171875 64.171875 50.171875 72 "/>
+<path style="fill-rule:nonzero;fill:url(#linear0);stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 50.171875 72 C 50.171875 79.828125 43.828125 86.171875 36 86.171875 C 28.171875 86.171875 21.828125 79.828125 21.828125 72 C 21.828125 64.171875 28.171875 57.828125 36 57.828125 C 43.828125 57.828125 50.171875 64.171875 50.171875 72 " transform="matrix(1,0,0,-1,0,144)"/>
 </g>
 <g clip-path="url(#clip3)" clip-rule="nonzero">
-<path style="fill-rule:nonzero;fill:url(#linear1);stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 86.171875 72 C 86.171875 79.828125 79.828125 86.171875 72 86.171875 C 64.171875 86.171875 57.828125 79.828125 57.828125 72 C 57.828125 64.171875 64.171875 57.828125 72 57.828125 C 79.828125 57.828125 86.171875 64.171875 86.171875 72 "/>
+<path style="fill-rule:nonzero;fill:url(#linear1);stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 86.171875 72 C 86.171875 79.828125 79.828125 86.171875 72 86.171875 C 64.171875 86.171875 57.828125 79.828125 57.828125 72 C 57.828125 64.171875 64.171875 57.828125 72 57.828125 C 79.828125 57.828125 86.171875 64.171875 86.171875 72 " transform="matrix(1,0,0,-1,0,144)"/>
 </g>
 <g clip-path="url(#clip4)" clip-rule="nonzero">
-<path style="fill-rule:nonzero;fill:url(#linear2);stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 122.171875 72 C 122.171875 79.828125 115.828125 86.171875 108 86.171875 C 100.171875 86.171875 93.828125 79.828125 93.828125 72 C 93.828125 64.171875 100.171875 57.828125 108 57.828125 C 115.828125 57.828125 122.171875 64.171875 122.171875 72 "/>
+<path style="fill-rule:nonzero;fill:url(#linear2);stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 122.171875 72 C 122.171875 79.828125 115.828125 86.171875 108 86.171875 C 100.171875 86.171875 93.828125 79.828125 93.828125 72 C 93.828125 64.171875 100.171875 57.828125 108 57.828125 C 115.828125 57.828125 122.171875 64.171875 122.171875 72 " transform="matrix(1,0,0,-1,0,144)"/>
 </g>
 </g>
+<pattern id="pattern0" patternUnits="userSpaceOnUse" width="144" height="144" patternTransform="matrix(1,0,0,-1,0,144)">
+<use xlink:href="#surface227"/>
+</pattern>
 </defs>
 <g id="surface222">
-<use xlink:href="#surface226"/>
+<rect x="0" y="0" width="144" height="144" style="fill:url(#pattern0);stroke:none;"/>
 <path style="fill:none;stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 0 144 L 144 144 L 144 0 L 0 0 Z M 0 144 "/>
 </g>
 </svg>

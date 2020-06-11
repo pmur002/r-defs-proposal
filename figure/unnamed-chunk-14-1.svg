@@ -2,15 +2,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144pt" height="144pt" viewBox="0 0 144 144" version="1.1">
 <defs>
 <clipPath id="clip1">
-  <rect x="0" y="0" width="144" height="144"/>
+  <rect width="144" height="144"/>
 </clipPath>
-<g id="surface174" clip-path="url(#clip1)">
-<path style="fill-rule:nonzero;fill:rgb(100%,0%,0%);fill-opacity:1;stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 68.171875 72 C 68.171875 79.828125 61.828125 86.171875 54 86.171875 C 46.171875 86.171875 39.828125 79.828125 39.828125 72 C 39.828125 64.171875 46.171875 57.828125 54 57.828125 C 61.828125 57.828125 68.171875 64.171875 68.171875 72 "/>
-<path style="fill-rule:nonzero;fill:rgb(0%,100%,0%);fill-opacity:1;stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 86.171875 72 C 86.171875 79.828125 79.828125 86.171875 72 86.171875 C 64.171875 86.171875 57.828125 79.828125 57.828125 72 C 57.828125 64.171875 64.171875 57.828125 72 57.828125 C 79.828125 57.828125 86.171875 64.171875 86.171875 72 "/>
-<path style="fill-rule:nonzero;fill:rgb(0%,0%,100%);fill-opacity:1;stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 104.171875 72 C 104.171875 79.828125 97.828125 86.171875 90 86.171875 C 82.171875 86.171875 75.828125 79.828125 75.828125 72 C 75.828125 64.171875 82.171875 57.828125 90 57.828125 C 97.828125 57.828125 104.171875 64.171875 104.171875 72 "/>
+<g id="surface175" clip-path="url(#clip1)">
+<path style="fill-rule:nonzero;fill:rgb(100%,0%,0%);fill-opacity:1;stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 68.173828 72 C 68.173828 79.828125 61.828125 86.171875 54 86.171875 C 46.171875 86.171875 39.826172 79.828125 39.826172 72 C 39.826172 64.171875 46.171875 57.828125 54 57.828125 C 61.828125 57.828125 68.173828 64.171875 68.173828 72 " transform="matrix(2,0,0,-1,-72,144)"/>
+<path style="fill-rule:nonzero;fill:rgb(0%,100%,0%);fill-opacity:1;stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 86.173828 72 C 86.173828 79.828125 79.828125 86.171875 72 86.171875 C 64.171875 86.171875 57.826172 79.828125 57.826172 72 C 57.826172 64.171875 64.171875 57.828125 72 57.828125 C 79.828125 57.828125 86.173828 64.171875 86.173828 72 " transform="matrix(2,0,0,-1,-72,144)"/>
+<path style="fill-rule:nonzero;fill:rgb(0%,0%,100%);fill-opacity:1;stroke-width:0.75;stroke-linecap:round;stroke-linejoin:round;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;" d="M 104.173828 72 C 104.173828 79.828125 97.828125 86.171875 90 86.171875 C 82.171875 86.171875 75.826172 79.828125 75.826172 72 C 75.826172 64.171875 82.171875 57.828125 90 57.828125 C 97.828125 57.828125 104.173828 64.171875 104.173828 72 " transform="matrix(2,0,0,-1,-72,144)"/>
 </g>
-<pattern id="pattern0" patternUnits="userSpaceOnUse" width="144" height="144">
-<use xlink:href="#surface174"/>
+<pattern id="pattern0" patternUnits="userSpaceOnUse" width="144" height="144" patternTransform="matrix(0.5,0,0,-1,36,144)">
+<use xlink:href="#surface175"/>
 </pattern>
 </defs>
 <g id="surface170">
