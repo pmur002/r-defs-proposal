@@ -1451,6 +1451,11 @@ popViewport()
     <p>
     The PDF device does not (yet) allow rasters within patterns or masks.
   </p>
+    <p>
+    The Cairo device currently has a fixed 
+    limit on the number of definitions allowed
+    (per page).  
+  </p>
     <h3>Issues</h3>
     <!--
   <p>
